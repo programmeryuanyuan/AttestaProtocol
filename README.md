@@ -7,14 +7,14 @@
 
 <div align="center">
 
-# ArbiterEscrow
+# Arbiter Protocol
 
 **The AI quality certification protocol on 0G.**  
 **The arbiter sees nothing — yet every certificate is provable on-chain.**
 
 *No jury. No oracle. No human. Pure cryptographic and hardware guarantee.*
 
-[Try It Now](https://arbiter-escrow.vercel.app/try) · [Live Dashboard](https://arbiter-escrow.vercel.app/dashboard) · [Contract on 0G Chain](https://chainscan.0g.ai/address/0xCC38524504022dADf93b5313617E8c6e61F61Db6) · [GitHub](https://github.com/programmeryuanyuan/ArbiterEscrow)
+[Try It Now](https://arbiter-escrow.vercel.app/try) · [Live Dashboard](https://arbiter-escrow.vercel.app/dashboard) · [Contract on 0G Chain](https://chainscan.0g.ai/address/0xCC38524504022dADf93b5313617E8c6e61F61Db6) · [GitHub](https://github.com/programmeryuanyuan/ArbiterProtocol)
 
 </div>
 
@@ -53,7 +53,7 @@
 | Human review | ✅ reviewer | Social | ❌ | $$$ |
 | Economic jury (stake/slash) | ✅ jurors | Economic | ❌ | $$ |
 | Oracle | ✅ operator | Centralized | ❌ | $ |
-| **ArbiterEscrow** | **❌ no one** | **Hardware** | **✅ on-chain** | **~$0.008** |
+| **Arbiter Protocol** | **❌ no one** | **Hardware** | **✅ on-chain** | **~$0.008** |
 
 **The solution:** ArbiterEscrow issues **Quality Certificates** backed by 0G Private Computer (TEE). The AI output enters a sealed Intel TDX hardware enclave. The compute operator cannot read the content. The evaluation generates a cryptographic attestation posted on 0G Chain. Any downstream contract — or human — can verify the certificate independently.
 
@@ -131,7 +131,7 @@ CertificateIssued(certId, subject, outputHash, score, passed, attestationHash)
 
 ## 4. Protocol Interface
 
-ArbiterEscrow is designed as a composable primitive, not just an app. Any 0G protocol can call it directly to issue quality certificates — no escrow required.
+Arbiter Protocol is designed as a composable primitive, not just an app. Any 0G protocol can call it directly to issue quality certificates — no escrow required.
 
 ```solidity
 // Any 0G protocol calls this to request a certificate
@@ -175,7 +175,7 @@ ArbiterEscrow.resolveExternalCert(certId, score, passed, attestationHash)
 
 ## 6. Why Now & Why 0G
 
-**Why now:** 0G Private Computer launched in 2026 as the first product combining TEE inference with on-chain attestation at scale. This exact capability stack didn't exist 12 months ago. ArbiterEscrow is only possible today.
+**Why now:** 0G Private Computer launched in 2026 as the first product combining TEE inference with on-chain attestation at scale. This exact capability stack didn't exist 12 months ago. Arbiter Protocol is only possible today.
 
 **Why 0G:** This protocol cannot be built on any other stack. The mechanism requires:
 - TEE that prevents the compute operator from seeing input → 0G Private Computer
@@ -183,9 +183,9 @@ ArbiterEscrow.resolveExternalCert(certId, score, passed, attestationHash)
 - Fast enough for agent-speed workflows → 400ms finality
 - Permanent storage for encrypted task specs and results → 0G Storage
 
-ArbiterEscrow uses all four layers of the 0G stack. It isn't "deployed on 0G" — it *requires* 0G to exist.
+Arbiter Protocol uses all four layers of the 0G stack. It isn't "deployed on 0G" — it *requires* 0G to exist.
 
-**The timing:** AI agents are beginning to transact with each other autonomously. The trust layer for agent-to-agent commerce doesn't exist yet. Every multi-agent system that routes payments will eventually need something like this. ArbiterEscrow is the first attempt to build it as an open protocol on 0G.
+**The timing:** AI agents are beginning to transact with each other autonomously. The trust layer for agent-to-agent commerce doesn't exist yet. Every multi-agent system that routes payments will eventually need something like this. Arbiter Protocol is the first attempt to build it as an open protocol on 0G.
 
 <p align="right"><a href="#readme-top">↑ back to top</a></p>
 
@@ -239,7 +239,7 @@ Contract deployed on 0G Aristotle Mainnet (Chain ID 16661):
 |---|---|
 | 🧪 Try It | [arbiter-escrow.vercel.app/try](https://arbiter-escrow.vercel.app/try) |
 | 🌐 Live Demo | [arbiter-escrow.vercel.app](https://arbiter-escrow.vercel.app) |
-| 💻 GitHub | [github.com/programmeryuanyuan/ArbiterEscrow](https://github.com/programmeryuanyuan/ArbiterEscrow) |
+| 💻 GitHub | [github.com/programmeryuanyuan/ArbiterProtocol](https://github.com/programmeryuanyuan/ArbiterProtocol) |
 | 📜 Contract | [0x04Ac...a67D on chainscan.0g.ai](https://chainscan.0g.ai/address/0xCC38524504022dADf93b5313617E8c6e61F61Db6) |
 | 🏆 Competition | [0G Zero Cup](https://0g.ai/arena/zero-cup) · June 2026 |
 
