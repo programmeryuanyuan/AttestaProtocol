@@ -15,29 +15,29 @@ export const revalidate = 60
 
 async function fetchStats() {
   try {
-    const [created, resolved, block] = await Promise.all([
-      getLogsInChunks("TaskCreated"),
-      getLogsInChunks("TaskResolved"),
+    const [certs, block] = await Promise.all([
+      getLogsInChunks("CertificateIssued"),
       publicClient.getBlockNumber(),
     ])
 
-    const settledAmount = resolved.reduce((sum: number, log: any) => {
-      return sum + Number(log.args?.amount ?? 0n) / 1e18
-    }, 0)
+    const passed  = certs.filter((l: any) => l.args?.passed === true).length
+    const avgScore = certs.length
+      ? Math.round(certs.reduce((s: number, l: any) => s + Number(l.args?.score ?? 0), 0) / certs.length)
+      : 0
 
-    const chartData = resolved.slice(-20).map((log: any, i: number) => ({
-      time: `T${i + 1}`,
-      settled: Number(((log.args?.amount ?? 0n) as bigint) / 10n ** 16n) / 100,
+    const chartData = certs.slice(-20).map((log: any, i: number) => ({
+      time: `#${i + 1}`,
+      settled: Number(log.args?.score ?? 0),
     }))
 
-    const recentEvents = [...created, ...resolved]
+    const recentEvents = [...certs]
       .sort((a: any, b: any) => Number((b.blockNumber ?? 0n) - (a.blockNumber ?? 0n)))
       .slice(0, 10)
 
     return {
-      totalTasks: created.length,
-      settled: resolved.length,
-      totalEth: settledAmount.toFixed(3),
+      totalCerts: certs.length,
+      passed,
+      avgScore,
       blockNumber: block,
       chartData,
       recentEvents,
@@ -45,7 +45,7 @@ async function fetchStats() {
     }
   } catch (err) {
     return {
-      totalTasks: 0, settled: 0, totalEth: "0.000",
+      totalCerts: 0, passed: 0, avgScore: 0,
       blockNumber: 36800000n,
       chartData: [], recentEvents: [],
       error: String(err),
@@ -57,9 +57,9 @@ export default async function DashboardPage() {
   const stats = await fetchStats()
 
   const statCards = [
-    { label: "Total Tasks", value: stats.totalTasks, sub: "on 0G Chain", color: "text-white" },
-    { label: "Settled", value: stats.settled, sub: "● Resolved", color: "text-emerald-400" },
-    { label: "ETH Settled", value: stats.totalEth, sub: "via TEE attestation", color: "text-purple-400" },
+    { label: "Certificates Issued", value: stats.totalCerts, sub: "on 0G Chain", color: "text-white" },
+    { label: "Passed",  value: stats.passed,   sub: "● Verified by TEE", color: "text-emerald-400" },
+    { label: "Avg Score", value: stats.totalCerts ? `${stats.avgScore}/100` : "—", sub: "TEE quality score", color: "text-purple-400" },
     { label: "Avg Verify", value: "2.3s", sub: "by 0G Private Computer", color: "text-white" },
   ]
 
@@ -68,7 +68,7 @@ export default async function DashboardPage() {
       {/* Header */}
       <header className="border-b border-white/6 px-6 py-4 flex items-center justify-between">
         <div>
-          <p className="text-white font-bold text-lg">ArbiterEscrow</p>
+          <p className="text-white font-bold text-lg">Arbiter Protocol</p>
           <p className="text-slate-500 text-xs mt-0.5">Agent-to-Agent Settlement · 0G Private Computer</p>
         </div>
         <div className="flex items-center gap-3">
@@ -118,26 +118,33 @@ export default async function DashboardPage() {
           {/* Left: Chart + Events */}
           <div className="lg:col-span-3 flex flex-col gap-5">
             <div className="rounded-xl border border-white/7 bg-white/[0.03] p-6">
-              <p className="text-white font-semibold text-sm mb-4">Settled ETH Over Time</p>
+              <p className="text-white font-semibold text-sm mb-4">Certificate Score History</p>
               <StatsChart data={stats.chartData} />
             </div>
 
             {stats.recentEvents.length > 0 && (
               <div className="rounded-xl border border-white/7 bg-white/[0.03] p-6 overflow-x-auto">
-                <p className="text-white font-semibold text-sm mb-4">Recent On-Chain Events</p>
+                <p className="text-white font-semibold text-sm mb-4">Recent Quality Certificates</p>
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="text-slate-500 uppercase tracking-wider border-b border-slate-800">
-                      <th className="text-left pb-2">Event</th>
-                      <th className="text-left pb-2">Block</th>
+                      <th className="text-left pb-2">Cert ID</th>
+                      <th className="text-left pb-2">Score</th>
+                      <th className="text-left pb-2">Result</th>
                       <th className="text-left pb-2">TX</th>
                     </tr>
                   </thead>
                   <tbody>
                     {stats.recentEvents.map((log: any, i: number) => (
                       <tr key={i} className="border-b border-slate-800/50">
-                        <td className="py-2 text-purple-300">{log.eventName}</td>
-                        <td className="py-2 text-slate-400 font-mono">{String(log.blockNumber)}</td>
+                        <td className="py-2 text-purple-300 font-mono">#{String(log.args?.certId ?? "—")}</td>
+                        <td className="py-2 text-white font-bold">{String(log.args?.score ?? "—")}/100</td>
+                        <td className="py-2">
+                          {log.args?.passed
+                            ? <span className="text-emerald-400 font-bold">PASS</span>
+                            : <span className="text-red-400 font-bold">FAIL</span>
+                          }
+                        </td>
                         <td className="py-2">
                           <a
                             href={`${EXPLORER}/tx/${log.transactionHash}`}
@@ -245,7 +252,7 @@ export default async function DashboardPage() {
       </div>
 
       <footer className="border-t border-white/6 px-6 py-4 text-center text-xs text-slate-600">
-        ArbiterEscrow · Built for 0G Zero Cup · June 2026 ·{" "}
+        Arbiter Protocol · Built for 0G Zero Cup · June 2026 ·{" "}
         <a href="https://0g.ai/arena/zero-cup" target="_blank" rel="noreferrer"
           className="hover:text-slate-400 transition-colors">
           0g.ai/arena/zero-cup ↗

@@ -27,41 +27,34 @@ export const EXPLORER = "https://chainscan.0g.ai"
 export const ABI = [
   {
     type: "event",
+    name: "CertificateIssued",
+    inputs: [
+      { name: "certId",          type: "uint256",  indexed: true  },
+      { name: "subject",         type: "address",  indexed: true  },
+      { name: "outputHash",      type: "bytes32",  indexed: false },
+      { name: "score",           type: "uint8",    indexed: false },
+      { name: "passed",          type: "bool",     indexed: false },
+      { name: "attestationHash", type: "bytes32",  indexed: false },
+    ],
+  },
+  {
+    type: "event",
     name: "TaskCreated",
     inputs: [
-      { name: "taskId", type: "uint256", indexed: true },
-      { name: "agentA", type: "address", indexed: true },
-      { name: "agentB", type: "address", indexed: true },
-      { name: "escrowAmount", type: "uint256", indexed: false },
-      { name: "criteriaURI", type: "string", indexed: false },
-    ],
-  },
-  {
-    type: "event",
-    name: "ResultSubmitted",
-    inputs: [
-      { name: "taskId", type: "uint256", indexed: true },
-      { name: "resultURI", type: "string", indexed: false },
-      { name: "resultHash", type: "bytes32", indexed: false },
-    ],
-  },
-  {
-    type: "event",
-    name: "AttestationReceived",
-    inputs: [
-      { name: "taskId", type: "uint256", indexed: true },
-      { name: "attestationHash", type: "bytes32", indexed: false },
-      { name: "passed", type: "bool", indexed: false },
-      { name: "score", type: "uint8", indexed: false },
+      { name: "taskId",       type: "uint256",  indexed: true  },
+      { name: "agentA",       type: "address",  indexed: true  },
+      { name: "agentB",       type: "address",  indexed: true  },
+      { name: "escrowAmount", type: "uint256",  indexed: false },
+      { name: "criteriaURI",  type: "string",   indexed: false },
     ],
   },
   {
     type: "event",
     name: "TaskResolved",
     inputs: [
-      { name: "taskId", type: "uint256", indexed: true },
-      { name: "recipient", type: "address", indexed: false },
-      { name: "amount", type: "uint256", indexed: false },
+      { name: "taskId",    type: "uint256",  indexed: true  },
+      { name: "recipient", type: "address",  indexed: false },
+      { name: "amount",    type: "uint256",  indexed: false },
     ],
   },
 ] as const
