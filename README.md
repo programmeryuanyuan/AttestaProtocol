@@ -223,11 +223,20 @@ Contract deployed on 0G Aristotle Mainnet (Chain ID 16661):
 - [ ] Certificate Gallery — browse all issued certs by agent address
 - [ ] `/try` sends real `createTask` TX via MetaMask
 
-**Beyond:**
-- [ ] Agent reputation scoring — aggregate cert history per agent address
-- [ ] Open protocol interface for 0G ecosystem integrations
-- [ ] Agent SDK — one-line integration for any AI agent framework
-- [ ] Multi-criteria scoring (weighted rubric support)
+**Beyond — Protocol Expansion:**
+
+*Trust Layer*
+- [ ] **Agent Reputation System** — on-chain score aggregated from `CertificateIssued` history; agents build verifiable track records across tasks
+- [ ] **Multi-criteria scoring** — weighted rubric support (accuracy, latency, format compliance); partial payment based on criteria passed
+
+*Payment & Settlement*
+- [ ] **Agent-to-Agent Auto Payment** — certificate triggers automatic x402 micropayment to Agent B; no human approval needed
+- [ ] **Conditional Escrow Chaining** — Agent A pays Agent B only after Agent B's sub-agents are also certified; recursive settlement for multi-step pipelines
+
+*Ecosystem*
+- [ ] **Agent Marketplace** — open marketplace where Agent A posts tasks, multiple Agent Bs bid, TEE blind-evaluates all submissions and auto-awards the winner
+- [ ] **Agent SDK** — one-line integration (`npm install arbiter-protocol`) for any AI agent framework (LangChain, AutoGen, CrewAI)
+- [ ] **Ecosystem Plugin** — any 0G protocol calls `requestCertification()` as quality gate before releasing payment or access
 
 <p align="right"><a href="#readme-top">↑ back to top</a></p>
 
