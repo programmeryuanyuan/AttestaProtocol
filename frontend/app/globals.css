@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+:root {
+  --background: #080808;
+  --foreground: #f1f5f9;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, -apple-system, sans-serif;
+  background-image: radial-gradient(rgba(168, 85, 247, 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}

@@ -155,4 +155,78 @@ contract ArbiterEscrow {
     function getTask(uint256 taskId) external view returns (Task memory) {
         return tasks[taskId];
     }
+
+    // ─── Protocol Interface (for external 0G apps) ────────────────────────────
+
+    struct Certificate {
+        address subject;        // agent whose output was evaluated
+        bytes32 outputHash;     // keccak256 of the AI output
+        bytes32 criteriaHash;   // keccak256 of evaluation criteria
+        uint8   score;
+        bool    passed;
+        bytes32 attestationHash;
+        uint256 issuedAt;
+    }
+
+    uint256 public nextCertId;
+    mapping(uint256 => Certificate) public certificates;
+    mapping(address => uint256[]) public agentCertIds;
+
+    event CertificateIssued(
+        uint256 indexed certId,
+        address indexed subject,
+        bytes32 outputHash,
+        uint8   score,
+        bool    passed,
+        bytes32 attestationHash
+    );
+
+    /**
+     * External entry point: any 0G protocol submits output + criteria hashes.
+     * TEE relayer (arbiterTEE) posts the attestation via resolveExternalCert().
+     * No escrow required — pure certification primitive.
+     */
+    function requestCertification(
+        address subject,
+        bytes32 outputHash,
+        bytes32 criteriaHash
+    ) external returns (uint256 certId) {
+        certId = nextCertId++;
+        certificates[certId] = Certificate({
+            subject:         subject,
+            outputHash:      outputHash,
+            criteriaHash:    criteriaHash,
+            score:           0,
+            passed:          false,
+            attestationHash: bytes32(0),
+            issuedAt:        0
+        });
+    }
+
+    /**
+     * TEE relayer resolves an external certification request.
+     */
+    function resolveExternalCert(
+        uint256 certId,
+        uint8   score,
+        bool    passed,
+        bytes32 attestationHash
+    ) external {
+        require(msg.sender == arbiterTEE, "Only arbiter");
+        Certificate storage c = certificates[certId];
+        require(c.issuedAt == 0, "Already resolved");
+
+        c.score           = score;
+        c.passed          = passed;
+        c.attestationHash = attestationHash;
+        c.issuedAt        = block.timestamp;
+
+        agentCertIds[c.subject].push(certId);
+
+        emit CertificateIssued(certId, c.subject, c.outputHash, score, passed, attestationHash);
+    }
+
+    function getAgentCertIds(address agent) external view returns (uint256[] memory) {
+        return agentCertIds[agent];
+    }
 }
