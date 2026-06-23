@@ -28,7 +28,7 @@ const BADGES = [
   "0G Chain · Aristotle",
   "Intel TDX",
   "NVIDIA H100",
-  "GLM-5",
+  "GLM-5.2",
   "Solidity 0.8",
   "Next.js",
 ]
@@ -129,15 +129,17 @@ export default function LandingPage() {
               <p className="text-[11px] uppercase tracking-widest text-slate-500">Protocol Interface</p>
               <pre className="bg-slate-900 rounded-lg p-4 text-xs text-slate-300 overflow-x-auto border border-slate-800 leading-relaxed">
 {`// Any 0G protocol can call this
-AttestProtocol.verify(
+AttestProtocol.requestCertification(
+  subject,      // agent address being evaluated
   outputHash,   // keccak256 of AI output
-  criteriaHash  // evaluation criteria
-) returns (
-  certId,       // on-chain certificate ID
-  score,        // 0–100
-  passed,       // bool
-  attestation   // TEE hardware signature
-)`}
+  criteriaHash  // keccak256 of evaluation criteria
+) returns (certId)
+
+// TEE relayer resolves it
+AttestProtocol.resolveExternalCert(
+  certId, score, passed, attestationHash
+)
+// → emits CertificateIssued on-chain`}
               </pre>
               <p className="text-[11px] text-slate-600">
                 No escrow required for external callers — just submit hashes, receive a hardware-backed certificate.

@@ -63,20 +63,27 @@ export async function getLogsInChunks(eventName: string, chunkSize = 2000n) {
   try {
     const latest = await publicClient.getBlockNumber()
     const from = DEPLOY_BLOCK
-    const results: any[] = []
+    const event = ABI.find((e) => e.type === "event" && e.name === eventName)
+    if (!event) return []
+
+    const ranges: [bigint, bigint][] = []
     for (let start = from; start <= latest; start += chunkSize) {
       const end = start + chunkSize - 1n < latest ? start + chunkSize - 1n : latest
-      const event = ABI.find((e) => e.type === "event" && e.name === eventName)
-      if (!event) break
-      const logs = await publicClient.getLogs({
-        address: CONTRACT_ADDRESS,
-        event: event as any,
-        fromBlock: start,
-        toBlock: end,
-      })
-      results.push(...logs)
+      ranges.push([start, end])
     }
-    return results
+
+    const chunks = await Promise.all(
+      ranges.map(([start, end]) =>
+        publicClient.getLogs({
+          address: CONTRACT_ADDRESS,
+          event: event as any,
+          fromBlock: start,
+          toBlock: end,
+        }).catch(() => [] as any[])
+      )
+    )
+
+    return chunks.flat()
   } catch {
     return []
   }

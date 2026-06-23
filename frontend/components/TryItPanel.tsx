@@ -83,17 +83,19 @@ export default function TryItPanel() {
   const [outputHash, setOutputHash]     = useState("")
   const [criteriaHash, setCriteriaHash] = useState("")
   const [attestation, setAttestation]   = useState("")
-  const [certId, setCertId]             = useState(47)
+  const [certId, setCertId]             = useState(0)
   const [issuedAt, setIssuedAt]         = useState("")
   const [txHash, setTxHash]             = useState<string | null>(null)
   const [txLoading, setTxLoading]       = useState(false)
   const [txError, setTxError]           = useState(false)
   const [autoError, setAutoError]       = useState("")
 
-  const timerRefs   = useRef<ReturnType<typeof setTimeout>[]>([])
-  const evalPromise = useRef<Promise<{ score: number; passed: boolean; reasoning: string } | null>>(
-    Promise.resolve(null)
-  )
+  const [storageUri,  setStorageUri]  = useState("")
+  const [storageHash, setStorageHash] = useState("")
+
+  const timerRefs      = useRef<ReturnType<typeof setTimeout>[]>([])
+  const evalPromise    = useRef<Promise<{ score: number; passed: boolean; reasoning: string } | null>>(Promise.resolve(null))
+  const uploadPromise  = useRef<Promise<{ rootHash: string; txHash: string; uri: string } | null>>(Promise.resolve(null))
 
   function clearTimers() { timerRefs.current.forEach(clearTimeout); timerRefs.current = [] }
 
@@ -107,6 +109,8 @@ export default function TryItPanel() {
     setTxLoading(false)
     setTxError(false)
     setAutoError("")
+    setStorageUri("")
+    setStorageHash("")
   }
 
   async function callCertifyAPI(outHash: string, critHash: string, s: number, p: boolean) {
@@ -121,6 +125,7 @@ export default function TryItPanel() {
       if (data.txHash) {
         setTxHash(data.txHash)
         setAttestation((prev) => data.attestationHash ?? prev)
+        if (data.certId != null) setCertId(Number(data.certId))
       } else {
         setTxError(true)
       }
@@ -134,21 +139,37 @@ export default function TryItPanel() {
   function runSubmit(criteriaVal: string, resultVal: string) {
     clearTimers()
 
-    const outHash  = keccak256(toHex(resultVal))
-    const critHash = keccak256(toHex(criteriaVal))
-    const attest   = keccak256(toHex(`${outHash}${critHash}${threshold}`))
+    const localOutHash = keccak256(toHex(resultVal))
+    const critHash     = keccak256(toHex(criteriaVal))
+    const attest       = keccak256(toHex(`${localOutHash}${critHash}${threshold}`))
 
-    setOutputHash(outHash)
+    setOutputHash(localOutHash)
     setCriteriaHash(critHash)
     setAttestation(attest)
-    setCertId((prev) => prev + 1)
+    setStorageUri("")
+    setStorageHash("")
+    setCertId(0)
     setIssuedAt(new Date().toISOString().replace("T", " ").slice(0, 16) + " UTC")
     setTxHash(null)
     setTxError(false)
     setPhase("step1")
     setDoneStep(0)
 
-    // Fire real GLM-5.2 evaluation in parallel with the animation
+    // Upload result to 0G Storage — runs during step1 animation
+    uploadPromise.current = fetch("/api/upload-to-0g", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: resultVal }),
+    })
+      .then((r) => r.json())
+      .then((d) =>
+        d.rootHash
+          ? { rootHash: d.rootHash as string, txHash: d.txHash as string, uri: d.uri as string }
+          : null
+      )
+      .catch(() => null)
+
+    // GLM-5.2 evaluation runs in parallel
     evalPromise.current = fetch("/api/evaluate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -166,17 +187,28 @@ export default function TryItPanel() {
     const t2 = setTimeout(() => { setDoneStep(2); setPhase("step3") }, 2600)
     const t3 = setTimeout(async () => {
       setDoneStep(3)
-      // Wait for real evaluation (may already be done if GLM-5.2 was fast)
-      const evalResult = await evalPromise.current
-      const s = evalResult?.score  ?? 50
-      const p = evalResult?.passed ?? s >= threshold
-      const r = evalResult?.reasoning ?? ""
+
+      const [uploadResult, evalResult] = await Promise.all([
+        uploadPromise.current,
+        evalPromise.current,
+      ])
+
+      // 0G Storage rootHash becomes the verifiable outputHash on-chain
+      const finalOutHash = uploadResult?.rootHash ?? localOutHash
+      if (uploadResult) {
+        setOutputHash(finalOutHash)
+        setStorageHash(uploadResult.rootHash)
+        setStorageUri(uploadResult.uri)
+      }
+
+      const s = evalResult?.score      ?? 50
+      const p = evalResult?.passed     ?? s >= threshold
+      const r = evalResult?.reasoning  ?? ""
       setScore(s)
       setPassed(p)
       setReasoning(r)
       setPhase("done")
-      // Certify on-chain with the real score
-      callCertifyAPI(outHash, critHash, s, p)
+      callCertifyAPI(finalOutHash, critHash, s, p)
     }, 5000)
 
     timerRefs.current = [t1, t2, t3]
@@ -411,6 +443,7 @@ export default function TryItPanel() {
                   { label: "Output Hash",     value: outputHash },
                   { label: "Criteria Hash",   value: criteriaHash },
                   { label: "TEE Attestation", value: attestation },
+                  ...(storageUri ? [{ label: "0G Storage URI", value: storageUri }] : []),
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-center justify-between gap-2">
                     <span className="text-[11px] text-slate-500 shrink-0">{label}</span>
@@ -420,11 +453,17 @@ export default function TryItPanel() {
                     </div>
                   </div>
                 ))}
-                <div className="flex items-center gap-1.5 pt-1.5 mt-0.5 border-t border-slate-800">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] text-emerald-400 uppercase tracking-wider">
-                    On-Chain · Verifiable by Any Protocol
+                <div className="flex items-center gap-3 pt-1.5 mt-0.5 border-t border-slate-800 flex-wrap">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[10px] text-emerald-400 uppercase tracking-wider">On-Chain Cert</span>
                   </span>
+                  {storageHash && (
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                      <span className="text-[10px] text-blue-400 uppercase tracking-wider">0G Storage Anchored</span>
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
