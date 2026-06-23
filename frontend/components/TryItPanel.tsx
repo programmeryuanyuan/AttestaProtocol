@@ -226,21 +226,31 @@ export default function TryItPanel() {
     setPhase("auto-generating")
 
     try {
-      const res  = await fetch("/api/agent-b", {
+      const res = await fetch("/api/agent-b", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ criteria: DEMO_CRITERIA }),
       })
-      const data = await res.json()
+
+      let data: { output?: string; error?: string }
+      try {
+        data = await res.json()
+      } catch {
+        setAutoError(`Agent B API error (HTTP ${res.status}) — please try again`)
+        setPhase("idle")
+        return
+      }
+
       if (!data.output) {
-        setAutoError(data.error ?? "Agent B generation failed")
+        setAutoError(data.error ?? "Agent B generation failed — please try again")
         setPhase("idle")
         return
       }
       setResult(data.output)
       runSubmit(DEMO_CRITERIA, data.output)
     } catch (err) {
-      setAutoError(String(err))
+      setAutoError("Network error — please try again")
+      console.error("[Auto Demo]", err)
       setPhase("idle")
     }
   }

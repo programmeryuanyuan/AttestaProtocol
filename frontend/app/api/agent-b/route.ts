@@ -13,31 +13,46 @@ export async function POST(req: NextRequest) {
 
   const { criteria } = await req.json()
 
-  const res = await fetch(`${ZG_BASE}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are Agent B, a professional AI assistant completing delegated tasks. " +
-            "Produce precise, well-structured deliverables that directly satisfy the given criteria. " +
-            "Write in a professional, concise style. Do not include meta-commentary.",
-        },
-        {
-          role: "user",
-          content: `Complete this task:\n\n${criteria}`,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 900,
-    }),
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 25_000)
+
+  let res: Response
+  try {
+    res = await fetch(`${ZG_BASE}/chat/completions`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are Agent B, a professional AI assistant completing delegated tasks. " +
+              "Produce precise, well-structured deliverables that directly satisfy the given criteria. " +
+              "Write in a professional, concise style. Do not include meta-commentary.",
+          },
+          {
+            role: "user",
+            content: `Complete this task:\n\n${criteria}`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 900,
+      }),
+    })
+  } catch (err: any) {
+    clearTimeout(timeout)
+    if (err?.name === "AbortError") {
+      return NextResponse.json({ error: "0G API timeout after 25s" }, { status: 504 })
+    }
+    return NextResponse.json({ error: String(err) }, { status: 502 })
+  } finally {
+    clearTimeout(timeout)
+  }
 
   if (!res.ok) {
     const body = await res.text()
