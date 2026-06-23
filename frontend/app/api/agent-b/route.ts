@@ -13,14 +13,10 @@ export async function POST(req: NextRequest) {
 
   const { criteria } = await req.json()
 
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 25_000)
-
   let res: Response
   try {
     res = await fetch(`${ZG_BASE}/chat/completions`, {
       method: "POST",
-      signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
@@ -45,13 +41,7 @@ export async function POST(req: NextRequest) {
       }),
     })
   } catch (err: any) {
-    clearTimeout(timeout)
-    if (err?.name === "AbortError") {
-      return NextResponse.json({ error: "0G API timeout after 25s" }, { status: 504 })
-    }
     return NextResponse.json({ error: String(err) }, { status: 502 })
-  } finally {
-    clearTimeout(timeout)
   }
 
   if (!res.ok) {
