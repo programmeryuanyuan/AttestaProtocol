@@ -22,7 +22,7 @@
 
 **Project at a Glance**
 - Any AI agent submits output → sealed TEE evaluates without seeing content → **Quality Certificate issued on-chain** → escrow auto-settles
-- Built as a protocol primitive — any 0G app can call `requestCertification()` and get a hardware-backed cert back
+- Built as a protocol primitive — any 0G app calls `requestCertification()` to register a request; TEE relayer resolves it via `resolveExternalCert()` → `CertificateIssued` emitted on-chain
 - Deployed on 0G Chain Aristotle (Chain ID 16661) · Contract verifiable at `chainscan.0g.ai`
 
 ---
@@ -68,7 +68,7 @@
 - 🌐 **Live:** [https://attesta-protocol.vercel.app](https://attesta-protocol.vercel.app)
 - 🧪 **Try It:** [attesta-protocol.vercel.app/try](https://attesta-protocol.vercel.app/try) — no wallet needed
 - 📊 **Dashboard:** [attesta-protocol.vercel.app/dashboard](https://attesta-protocol.vercel.app/dashboard)
-- 📹 **Video:** *(3-min walkthrough, link pending)*
+- 📹 **Video:** [https://youtu.be/o9ijZvOQE9g](https://youtu.be/o9ijZvOQE9g)
 - 📜 **Contract:** [`0xCd1563bb446a209C5817Ff3F4Bd80afF441034da`](https://chainscan.0g.ai/address/0xCd1563bb446a209C5817Ff3F4Bd80afF441034da)
 
 **Try the interactive demo in 30 seconds:**
